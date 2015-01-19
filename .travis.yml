@@ -4,29 +4,38 @@ php:
   - 5.3
   - 5.4
   - 5.5
+  - 5.6
   - hhvm
- 
+
+branches:
+  only:
+    - master
+    - /^\d+\.\d+$/
+
 env:
-  - SYMFONY_VERSION=2.5.*
+  SYMFONY_VERSION='* symfony/expression-language:~2.4'
 
 matrix:
-  allow_failures:
-    - env: SYMFONY_VERSION=dev-master
-    - php: hhvm
   include:
     - php: 5.5
-      env: SYMFONY_VERSION='2.3.* symfony/expression-language:2.4.* symfony/routing:2.4.*'
+      env: SYMFONY_VERSION='2.3.* symfony/expression-language:2.4.*'
     - php: 5.5
       env: SYMFONY_VERSION=2.4.*
     - php: 5.5
-      env: SYMFONY_VERSION='dev-master symfony/debug:~2.6@dev symfony/http-kernel:~2.6@dev'
+      env: SYMFONY_VERSION=2.6.*
+    - php: 5.5
+      env: SYMFONY_VERSION='2.7.*@dev'
 
 before_script:
   - composer self-update
-  - composer require symfony/framework-bundle:${SYMFONY_VERSION} --no-update
+  - sh -c 'if [ "$SYMFONY_VERSION" != "" ]; then composer require --dev --no-update symfony/symfony=$SYMFONY_VERSION; fi;'
   - composer update --prefer-source
 
-script: phpunit --coverage-text
+script: phpunit --coverage-clover=coverage.clover
+
+after_script:
+  - wget https://scrutinizer-ci.com/ocular.phar
+  - php ocular.phar code-coverage:upload --format=php-clover coverage.clover
 
 notifications:
   email:

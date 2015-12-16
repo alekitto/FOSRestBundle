@@ -12,8 +12,10 @@
 namespace FOS\RestBundle\EventListener;
 
 use FOS\RestBundle\FOSRestBundle;
+use FOS\RestBundle\Request\ParamFetcher;
 use FOS\RestBundle\Request\ParamFetcherInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
 
 /**
@@ -41,6 +43,30 @@ class ParamFetcherListener
         $this->setParamsAsAttributes = $setParamsAsAttributes;
     }
 
+    public function onKernelRequest()
+    {
+        $this->container->set('fos_rest.request.param_fetcher', null);
+    }
+
+    public function onKernelFinishRequest()
+    {
+        /** @var RequestStack $requestStack */
+        $requestStack = $this->container->get('request_stack');
+        $request = $requestStack->getParentRequest();
+        $parentFetcher = null;
+
+        if (null !== $request) {
+            foreach ($request->attributes->all() as $attribute) {
+                if ($attribute instanceof ParamFetcherInterface) {
+                    $parentFetcher = $attribute;
+                    break;
+                }
+            }
+        }
+
+        $this->container->set('fos_rest.request.param_fetcher', $parentFetcher);
+    }
+
     /**
      * Core controller handler.
      *
@@ -56,7 +82,7 @@ class ParamFetcherListener
             return;
         }
 
-        $paramFetcher = $this->container->get('fos_rest.request.param_fetcher');
+        $paramFetcher = $this->createParamFetcher();
 
         $controller = $event->getController();
 
@@ -79,6 +105,19 @@ class ParamFetcherListener
                 $request->attributes->set($name, $param);
             }
         }
+    }
+
+    protected function createParamFetcher()
+    {
+        $paramFetcher = new ParamFetcher(
+            $this->container->get('fos_rest.request.param_fetcher.reader'),
+            $this->container->get('request_stack'),
+            $this->container->get('fos_rest.violation_formatter'),
+            $this->container->get('validator', ContainerInterface::NULL_ON_INVALID_REFERENCE)
+        );
+
+        $paramFetcher->setContainer($this->container);
+        return $paramFetcher;
     }
 
     /**

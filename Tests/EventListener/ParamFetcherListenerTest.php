@@ -13,6 +13,7 @@ namespace FOS\RestBundle\Tests\EventListener;
 
 use FOS\RestBundle\EventListener\ParamFetcherListener;
 use FOS\RestBundle\FOSRestBundle;
+use FOS\RestBundle\Request\ParamFetcherInterface;
 use FOS\RestBundle\Tests\Fixtures\Controller\ParamFetcherController;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -198,11 +199,22 @@ class ParamFetcherListenerTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $this->container->expects($this->any())
-            ->method('get')
-            ->with('fos_rest.request.param_fetcher')
-            ->will($this->returnValue($this->paramFetcher));
+        $this->paramFetcherListener = new ParamFetcherListenerTester($this->container, true);
+        $this->paramFetcherListener->setParamFetcherMock($this->paramFetcher);
+    }
+}
 
-        $this->paramFetcherListener = new ParamFetcherListener($this->container, true);
+class ParamFetcherListenerTester extends ParamFetcherListener
+{
+    private $paramFetcherMock;
+
+    public function setParamFetcherMock(ParamFetcherInterface $mock)
+    {
+        $this->paramFetcherMock = $mock;
+    }
+
+    protected function createParamFetcher()
+    {
+        return $this->paramFetcherMock;
     }
 }

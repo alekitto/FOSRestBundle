@@ -6,15 +6,7 @@
 
     <services>
 
-        <service id="fos_rest.request.param_fetcher" class="FOS\RestBundle\Request\ParamFetcher">
-            <argument type="service" id="fos_rest.request.param_fetcher.reader"/>
-            <argument type="service" id="request_stack"/>
-            <argument type="service" id="fos_rest.violation_formatter"/>
-            <argument type="service" id="validator" on-invalid="null"/>
-            <call method="setContainer">
-                <argument type="service" id="service_container" />
-            </call>
-        </service>
+        <service id="fos_rest.request.param_fetcher" synthetic="true" />
 
         <service id="fos_rest.request.param_fetcher.reader" class="FOS\RestBundle\Request\ParamReader">
             <argument type="service" id="annotation_reader"/>
